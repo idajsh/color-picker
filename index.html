@@ -24,28 +24,52 @@
     padding: 28px;
   }
   .wrap { max-width: 940px; margin: 0 auto; }
-  header { display: flex; align-items: baseline; gap: 14px; margin-bottom: 20px; }
+  header { display: flex; align-items: baseline; gap: 14px; margin-bottom: 16px; }
   h1 { font-size: 17px; font-weight: 600; letter-spacing: 0.3px; margin: 0; }
   header .hint { color: var(--muted); font-size: 12.5px; }
   kbd {
     font-family: var(--mono); font-size: 11px; background: var(--panel);
     border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; color: var(--ink);
   }
-  .grid { display: grid; grid-template-columns: 1fr 220px; gap: 18px; align-items: start; }
+
+  /* mode tabs */
+  .tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+  .tab {
+    padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px;
+    background: var(--panel); color: var(--muted); border: 1px solid var(--line);
+  }
+  .tab.active { color: var(--bg); background: var(--accent); border-color: var(--accent); font-weight: 600; }
+
+  .grid { display: grid; grid-template-columns: 1fr 230px; gap: 18px; align-items: start; }
   @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
 
   .stage {
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    min-height: 340px;
-    display: flex; align-items: center; justify-content: center;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    min-height: 340px; display: flex; align-items: center; justify-content: center;
     position: relative; overflow: hidden;
   }
   .stage.drop { outline: 2px dashed var(--accent); outline-offset: -8px; }
   .empty { text-align: center; color: var(--muted); font-size: 13px; line-height: 1.7; padding: 30px; }
   .empty strong { color: var(--ink); font-weight: 600; }
-  #canvas { max-width: 100%; max-height: 68vh; display: block; cursor: crosshair; image-rendering: auto; }
+  #canvas { max-width: 100%; max-height: 68vh; display: block; cursor: crosshair; }
+
+  /* hex-entry mode */
+  .hexmode { display: none; flex-direction: column; align-items: center; gap: 18px; padding: 40px; width: 100%; }
+  .hexmode.on { display: flex; }
+  .hex-input-row { display: flex; gap: 10px; align-items: center; width: 100%; max-width: 340px; }
+  .hex-field {
+    flex: 1; font-family: var(--mono); font-size: 18px; letter-spacing: 1px;
+    padding: 11px 14px; border-radius: 8px; text-transform: uppercase;
+    background: var(--bg); color: var(--ink); border: 1px solid var(--line); outline: none;
+  }
+  .hex-field:focus { border-color: var(--accent); }
+  .hex-field.bad { border-color: #e06c6c; }
+  input[type=color] {
+    width: 46px; height: 46px; padding: 0; border: 1px solid var(--line);
+    border-radius: 8px; background: none; cursor: pointer;
+  }
+  .hex-preview { width: 100%; max-width: 340px; height: 120px; border-radius: 10px; border: 1px solid var(--line); background: #000; }
+  .hexmode .note { color: var(--muted); font-size: 12px; }
 
   /* loupe */
   #loupe {
@@ -54,19 +78,9 @@
     pointer-events: none; display: none; z-index: 20;
     image-rendering: pixelated; background: #000;
   }
-  #loupe::after {
-    content: ""; position: absolute; inset: 0; border-radius: 50%;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,.15);
-  }
 
-  .panel {
-    background: var(--panel); border: 1px solid var(--line);
-    border-radius: 10px; padding: 16px;
-  }
-  .swatch-big {
-    width: 100%; aspect-ratio: 16/9; border-radius: 7px; border: 1px solid var(--line);
-    background: #000; margin-bottom: 12px;
-  }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+  .swatch-big { width: 100%; aspect-ratio: 16/9; border-radius: 7px; border: 1px solid var(--line); background: #000; margin-bottom: 12px; }
   .readout { font-family: var(--mono); }
   .row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--line); }
   .row:last-child { border-bottom: none; }
@@ -81,10 +95,30 @@
   button.copy.done { background: var(--ink); color: var(--bg); }
 
   .recent { margin-top: 16px; }
-  .recent .label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+  .recent .label, .harm .label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
   .chip { width: 26px; height: 26px; border-radius: 5px; border: 1px solid var(--line); cursor: pointer; }
   .chip:hover { transform: scale(1.12); }
+
+  /* harmonies (full width) */
+  .harm-wrap { margin-top: 18px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px; }
+  .harm-wrap > h2 { font-size: 13px; font-weight: 600; margin: 0 0 4px; }
+  .harm-wrap > .sub { color: var(--muted); font-size: 12px; margin: 0 0 16px; }
+  .harm-groups { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  @media (max-width: 720px) { .harm-groups { grid-template-columns: 1fr; } }
+  .harm { }
+  .harm-swatches { display: flex; gap: 8px; }
+  .hs {
+    flex: 1; min-width: 0; cursor: pointer; border-radius: 7px; overflow: hidden;
+    border: 1px solid var(--line);
+  }
+  .hs .block { height: 46px; }
+  .hs.base .block { box-shadow: inset 0 0 0 2px var(--ink); }
+  .hs .cap {
+    font-family: var(--mono); font-size: 10.5px; text-align: center; padding: 4px 2px;
+    color: var(--muted); background: var(--bg); white-space: nowrap;
+  }
+  .hs:hover .cap { color: var(--ink); }
 
   .tools { margin-top: 12px; display: flex; gap: 8px; }
   .tools button {
@@ -94,25 +128,44 @@
   }
   .tools button:hover { color: var(--ink); border-color: var(--muted); }
   input[type=file] { display: none; }
+  .placeholder { color: var(--muted); font-size: 13px; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <h1>Eyedropper</h1>
-    <span class="hint">Paste with <kbd>⌘V</kbd>, drop an image, or click to browse. Then hover to inspect, click to lock a color.</span>
+    <span class="hint">Pick a color from an image, or type a hex code — then see palettes that pair with it.</span>
   </header>
 
+  <div class="tabs">
+    <div class="tab active" id="tab-image">Pick from image</div>
+    <div class="tab" id="tab-hex">Enter hex</div>
+  </div>
+
   <div class="grid">
+    <!-- LEFT: image picker OR hex entry -->
     <div class="stage" id="stage">
+      <!-- image mode -->
       <div class="empty" id="empty">
         <strong>Drop an image here</strong><br>
         or press <kbd>⌘V</kbd> to paste a screenshot<br>
         <span style="font-size:12px">(click anywhere to browse files)</span>
       </div>
       <canvas id="canvas" style="display:none"></canvas>
+
+      <!-- hex mode -->
+      <div class="hexmode" id="hexmode">
+        <div class="hex-input-row">
+          <input type="text" class="hex-field" id="hexField" placeholder="#4FD1C5" maxlength="7" spellcheck="false">
+          <input type="color" id="colorPick" value="#4fd1c5">
+        </div>
+        <div class="hex-preview" id="hexPreview"></div>
+        <div class="note">Type a hex code (with or without #) or use the swatch to pick.</div>
+      </div>
     </div>
 
+    <!-- RIGHT: readout -->
     <div class="panel">
       <div class="swatch-big" id="swatch"></div>
       <div class="readout">
@@ -128,7 +181,14 @@
     </div>
   </div>
 
-  <div class="tools" style="max-width:940px;margin:12px auto 0">
+  <!-- HARMONIES -->
+  <div class="harm-wrap">
+    <h2>Colors that pair with it</h2>
+    <p class="sub" id="harmSub">Lock a color above to generate palettes. Click any swatch to copy its hex.</p>
+    <div class="harm-groups" id="harmGroups"></div>
+  </div>
+
+  <div class="tools">
     <button id="browseBtn">Open file…</button>
     <button id="clearBtn">Clear</button>
   </div>
@@ -138,21 +198,16 @@
 <input type="file" id="file" accept="image/*">
 
 <script>
-const stage = document.getElementById('stage');
-const empty = document.getElementById('empty');
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d', { willReadFrequently: true });
-const loupe = document.getElementById('loupe');
-const lctx = loupe.getContext('2d');
-const fileInput = document.getElementById('file');
-
-let img = null;          // natural-resolution offscreen copy
-let scale = 1;           // display px per image px
-let locked = null;       // last clicked color
-const recent = [];
-
-function hexOf(r,g,b){ return '#' + [r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('').toUpperCase(); }
-function hsl(r,g,b){
+/* ---------- color helpers ---------- */
+function clamp255(v){ return Math.max(0, Math.min(255, Math.round(v))); }
+function hexOf(r,g,b){ return '#' + [r,g,b].map(v=>clamp255(v).toString(16).padStart(2,'0')).join('').toUpperCase(); }
+function parseHex(str){
+  let s = str.trim().replace(/^#/, '');
+  if (s.length === 3) s = s.split('').map(c => c+c).join('');
+  if (!/^[0-9a-fA-F]{6}$/.test(s)) return null;
+  return { r: parseInt(s.slice(0,2),16), g: parseInt(s.slice(2,4),16), b: parseInt(s.slice(4,6),16) };
+}
+function rgbToHsl(r,g,b){
   r/=255; g/=255; b/=255;
   const mx=Math.max(r,g,b), mn=Math.min(r,g,b); let h,s,l=(mx+mn)/2;
   if(mx===mn){ h=s=0; } else {
@@ -160,23 +215,148 @@ function hsl(r,g,b){
     switch(mx){ case r: h=(g-b)/d+(g<b?6:0); break; case g: h=(b-r)/d+2; break; default: h=(r-g)/d+4; }
     h/=6;
   }
-  return `${Math.round(h*360)}°, ${Math.round(s*100)}%, ${Math.round(l*100)}%`;
+  return { h: h*360, s, l };
+}
+function hslToRgb(h, s, l){
+  h = ((h % 360) + 360) % 360;
+  const c = (1 - Math.abs(2*l - 1)) * s;
+  const x = c * (1 - Math.abs((h/60) % 2 - 1));
+  const m = l - c/2;
+  let r=0,g=0,b=0;
+  if (h < 60)      { r=c; g=x; }
+  else if (h<120)  { r=x; g=c; }
+  else if (h<180)  { g=c; b=x; }
+  else if (h<240)  { g=x; b=c; }
+  else if (h<300)  { r=x; b=c; }
+  else             { r=c; b=x; }
+  return { r:(r+m)*255, g:(g+m)*255, b:(b+m)*255 };
+}
+function rotate(hsl, deg){ const c = hslToRgb(hsl.h+deg, hsl.s, hsl.l); return hexOf(c.r,c.g,c.b); }
+function lighten(hsl, l){ const c = hslToRgb(hsl.h, hsl.s, Math.max(0,Math.min(1,l))); return hexOf(c.r,c.g,c.b); }
+
+/* ---------- state ---------- */
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d', { willReadFrequently: true });
+const loupe = document.getElementById('loupe');
+const lctx = loupe.getContext('2d');
+const stage = document.getElementById('stage');
+const empty = document.getElementById('empty');
+const fileInput = document.getElementById('file');
+let img = null;
+let active = null;             // {r,g,b} locked color driving readout + harmonies
+const recent = [];
+
+/* ---------- shared readout + harmonies ---------- */
+function showColor(p){ // transient (hover) — updates readout only
+  document.getElementById('swatch').style.background = hexOf(p.r,p.g,p.b);
+  document.getElementById('hex').textContent = hexOf(p.r,p.g,p.b);
+  document.getElementById('rgb').textContent = `${p.r}, ${p.g}, ${p.b}`;
+  const h = rgbToHsl(p.r,p.g,p.b);
+  document.getElementById('hsl').textContent = `${Math.round(h.h)}°, ${Math.round(h.s*100)}%, ${Math.round(h.l*100)}%`;
+}
+function setActive(p){ // locked — updates readout, recent, harmonies
+  active = { r:clamp255(p.r), g:clamp255(p.g), b:clamp255(p.b) };
+  showColor(active);
+  addRecent(hexOf(active.r,active.g,active.b));
+  buildHarmonies(active);
+}
+function addRecent(hex){
+  if (recent[0] === hex) return;
+  recent.unshift(hex);
+  if (recent.length > 10) recent.pop();
+  const chips = document.getElementById('chips'); chips.innerHTML = '';
+  recent.forEach(h => {
+    const c = document.createElement('div');
+    c.className = 'chip'; c.style.background = h; c.title = h;
+    c.onclick = () => copyHex(h);
+    chips.appendChild(c);
+  });
+}
+function copyHex(hex){ navigator.clipboard.writeText(hex); }
+
+function buildHarmonies(p){
+  const hsl = rgbToHsl(p.r,p.g,p.b);
+  const base = hexOf(p.r,p.g,p.b);
+  const groups = [
+    { name: 'Complementary',       cols: [base, rotate(hsl,180)] },
+    { name: 'Analogous',           cols: [rotate(hsl,-30), base, rotate(hsl,30)] },
+    { name: 'Triadic',             cols: [base, rotate(hsl,120), rotate(hsl,240)] },
+    { name: 'Split-complementary', cols: [base, rotate(hsl,150), rotate(hsl,210)] },
+    { name: 'Tetradic',            cols: [base, rotate(hsl,90), rotate(hsl,180), rotate(hsl,270)] },
+    { name: 'Monochromatic',       cols: [lighten(hsl,0.25), lighten(hsl,0.4), base, lighten(hsl,0.65), lighten(hsl,0.8)] },
+  ];
+  document.getElementById('harmSub').textContent = 'Based on ' + base + ' — click any swatch to copy its hex.';
+  const wrap = document.getElementById('harmGroups');
+  wrap.innerHTML = '';
+  groups.forEach(g => {
+    const div = document.createElement('div');
+    div.className = 'harm';
+    let sw = '';
+    g.cols.forEach(hex => {
+      const isBase = hex.toUpperCase() === base.toUpperCase();
+      sw += `<div class="hs${isBase?' base':''}" data-hex="${hex}" title="Copy ${hex}">
+               <div class="block" style="background:${hex}"></div>
+               <div class="cap">${hex}</div>
+             </div>`;
+    });
+    div.innerHTML = `<div class="label">${g.name}</div><div class="harm-swatches">${sw}</div>`;
+    wrap.appendChild(div);
+  });
+  wrap.querySelectorAll('.hs').forEach(el => {
+    el.addEventListener('click', () => {
+      const hex = el.dataset.hex;
+      copyHex(hex);
+      const cap = el.querySelector('.cap'); const prev = cap.textContent;
+      cap.textContent = 'copied'; setTimeout(() => cap.textContent = prev, 900);
+    });
+  });
 }
 
+/* ---------- mode switching ---------- */
+const tabImage = document.getElementById('tab-image');
+const tabHex   = document.getElementById('tab-hex');
+const hexmode  = document.getElementById('hexmode');
+function setMode(mode){
+  const isImage = mode === 'image';
+  tabImage.classList.toggle('active', isImage);
+  tabHex.classList.toggle('active', !isImage);
+  hexmode.classList.toggle('on', !isImage);
+  canvas.style.display = (isImage && img) ? 'block' : 'none';
+  empty.style.display  = (isImage && !img) ? 'block' : 'none';
+  document.getElementById('browseBtn').style.display = isImage ? '' : 'none';
+  document.getElementById('clearBtn').style.display  = isImage ? '' : 'none';
+}
+tabImage.addEventListener('click', () => setMode('image'));
+tabHex.addEventListener('click',   () => setMode('hex'));
+
+/* ---------- hex-entry mode ---------- */
+const hexField = document.getElementById('hexField');
+const colorPick = document.getElementById('colorPick');
+const hexPreview = document.getElementById('hexPreview');
+function applyHexInput(str){
+  const p = parseHex(str);
+  if (!p) { hexField.classList.add('bad'); return; }
+  hexField.classList.remove('bad');
+  hexPreview.style.background = hexOf(p.r,p.g,p.b);
+  colorPick.value = hexOf(p.r,p.g,p.b).toLowerCase();
+  setActive(p);
+}
+hexField.addEventListener('input', e => applyHexInput(e.target.value));
+colorPick.addEventListener('input', e => {
+  hexField.value = e.target.value.toUpperCase();
+  applyHexInput(e.target.value);
+});
+
+/* ---------- image mode ---------- */
 function loadImage(src){
   const im = new Image();
   im.onload = () => {
-    img = im;
-    canvas.width = im.naturalWidth;
-    canvas.height = im.naturalHeight;
+    img = im; canvas.width = im.naturalWidth; canvas.height = im.naturalHeight;
     ctx.drawImage(im, 0, 0);
-    canvas.style.display = 'block';
-    empty.style.display = 'none';
-    requestAnimationFrame(() => { scale = canvas.clientWidth / canvas.width; });
+    setMode('image');
   };
   im.src = src;
 }
-
 function pixelAt(clientX, clientY){
   const r = canvas.getBoundingClientRect();
   const x = Math.floor((clientX - r.left) / r.width  * canvas.width);
@@ -185,40 +365,15 @@ function pixelAt(clientX, clientY){
   const d = ctx.getImageData(x, y, 1, 1).data;
   return { r:d[0], g:d[1], b:d[2], x, y };
 }
-
-function setReadout(p){
-  document.getElementById('swatch').style.background = hexOf(p.r,p.g,p.b);
-  document.getElementById('hex').textContent = hexOf(p.r,p.g,p.b);
-  document.getElementById('rgb').textContent = `${p.r}, ${p.g}, ${p.b}`;
-  document.getElementById('hsl').textContent = hsl(p.r,p.g,p.b);
-}
-
-function addRecent(hex){
-  if (recent[0] === hex) return;
-  recent.unshift(hex);
-  if (recent.length > 10) recent.pop();
-  const chips = document.getElementById('chips');
-  chips.innerHTML = '';
-  recent.forEach(h => {
-    const c = document.createElement('div');
-    c.className = 'chip'; c.style.background = h; c.title = h;
-    c.onclick = () => { navigator.clipboard.writeText(h); };
-    chips.appendChild(c);
-  });
-}
-
-// hover loupe
 canvas.addEventListener('mousemove', e => {
   if (!img) return;
   const p = pixelAt(e.clientX, e.clientY);
   if (!p) { loupe.style.display='none'; return; }
-  setReadout(p);
-  // draw zoomed region
-  const zoom = 12, span = 128/zoom; // px of source shown
+  showColor(p);
+  const zoom = 12, span = 128/zoom;
   lctx.imageSmoothingEnabled = false;
   lctx.clearRect(0,0,128,128);
   lctx.drawImage(canvas, p.x-span/2, p.y-span/2, span, span, 0, 0, 128, 128);
-  // crosshair
   lctx.strokeStyle = 'rgba(255,255,255,.9)'; lctx.lineWidth = 1;
   lctx.strokeRect(64-zoom/2, 64-zoom/2, zoom, zoom);
   loupe.style.display = 'block';
@@ -227,59 +382,47 @@ canvas.addEventListener('mousemove', e => {
 });
 canvas.addEventListener('mouseleave', () => {
   loupe.style.display = 'none';
-  if (locked) setReadout(locked);
+  if (active) showColor(active);
 });
 canvas.addEventListener('click', e => {
   const p = pixelAt(e.clientX, e.clientY);
-  if (!p) return;
-  locked = p; setReadout(p); addRecent(hexOf(p.r,p.g,p.b));
+  if (p) setActive(p);
 });
 
-// copy
+/* copy button */
 document.getElementById('copyBtn').addEventListener('click', () => {
   const hex = document.getElementById('hex').textContent;
   if (hex === '—') return;
-  navigator.clipboard.writeText(hex);
+  copyHex(hex);
   const b = document.getElementById('copyBtn');
   b.textContent = 'Copied ' + hex; b.classList.add('done');
   setTimeout(() => { b.textContent = 'Copy hex'; b.classList.remove('done'); }, 1200);
 });
 
-// paste
+/* paste */
 window.addEventListener('paste', e => {
   const items = e.clipboardData?.items || [];
   for (const it of items) {
-    if (it.type.startsWith('image/')) {
-      const blob = it.getAsFile();
-      loadImage(URL.createObjectURL(blob));
-      e.preventDefault();
-      return;
-    }
+    if (it.type.startsWith('image/')) { loadImage(URL.createObjectURL(it.getAsFile())); e.preventDefault(); return; }
   }
 });
-
-// drag & drop
+/* drag & drop */
 ['dragenter','dragover'].forEach(ev => stage.addEventListener(ev, e => { e.preventDefault(); stage.classList.add('drop'); }));
 ['dragleave','drop'].forEach(ev => stage.addEventListener(ev, e => { e.preventDefault(); stage.classList.remove('drop'); }));
 stage.addEventListener('drop', e => {
   const f = e.dataTransfer.files?.[0];
   if (f && f.type.startsWith('image/')) loadImage(URL.createObjectURL(f));
 });
-
-// browse
+/* browse */
 function browse(){ fileInput.click(); }
 empty.addEventListener('click', browse);
 document.getElementById('browseBtn').addEventListener('click', browse);
-fileInput.addEventListener('change', e => {
-  const f = e.target.files[0];
-  if (f) loadImage(URL.createObjectURL(f));
-});
+fileInput.addEventListener('change', e => { const f = e.target.files[0]; if (f) loadImage(URL.createObjectURL(f)); });
 document.getElementById('clearBtn').addEventListener('click', () => {
-  img = null; canvas.style.display='none'; empty.style.display='block';
+  img = null; setMode('image');
   document.getElementById('swatch').style.background = '#000';
   ['hex','rgb','hsl'].forEach(id => document.getElementById(id).textContent = '—');
 });
-window.addEventListener('resize', () => { if (img) scale = canvas.clientWidth / canvas.width; });
 </script>
 </body>
 </html>
