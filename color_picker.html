@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eyedropper</title>
+<style>
+  :root {
+    --bg: #0f1216;
+    --panel: #171b21;
+    --line: #262c34;
+    --ink: #e6e9ee;
+    --muted: #8b93a1;
+    --accent: #4fd1c5;
+    --mono: "SF Mono", "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    min-height: 100vh;
+    padding: 28px;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; }
+  header { display: flex; align-items: baseline; gap: 14px; margin-bottom: 20px; }
+  h1 { font-size: 17px; font-weight: 600; letter-spacing: 0.3px; margin: 0; }
+  header .hint { color: var(--muted); font-size: 12.5px; }
+  kbd {
+    font-family: var(--mono); font-size: 11px; background: var(--panel);
+    border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; color: var(--ink);
+  }
+  .grid { display: grid; grid-template-columns: 1fr 220px; gap: 18px; align-items: start; }
+  @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+
+  .stage {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    min-height: 340px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+  }
+  .stage.drop { outline: 2px dashed var(--accent); outline-offset: -8px; }
+  .empty { text-align: center; color: var(--muted); font-size: 13px; line-height: 1.7; padding: 30px; }
+  .empty strong { color: var(--ink); font-weight: 600; }
+  #canvas { max-width: 100%; max-height: 68vh; display: block; cursor: crosshair; image-rendering: auto; }
+
+  /* loupe */
+  #loupe {
+    position: fixed; width: 128px; height: 128px; border-radius: 50%;
+    border: 2px solid var(--ink); box-shadow: 0 6px 22px rgba(0,0,0,.5);
+    pointer-events: none; display: none; z-index: 20;
+    image-rendering: pixelated; background: #000;
+  }
+  #loupe::after {
+    content: ""; position: absolute; inset: 0; border-radius: 50%;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.15);
+  }
+
+  .panel {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; padding: 16px;
+  }
+  .swatch-big {
+    width: 100%; aspect-ratio: 16/9; border-radius: 7px; border: 1px solid var(--line);
+    background: #000; margin-bottom: 12px;
+  }
+  .readout { font-family: var(--mono); }
+  .row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--line); }
+  .row:last-child { border-bottom: none; }
+  .row .k { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
+  .row .v { font-size: 14px; }
+  button.copy {
+    margin-top: 12px; width: 100%; padding: 9px; border-radius: 7px; cursor: pointer;
+    background: var(--accent); color: #06201d; border: none; font-weight: 600; font-size: 13px;
+    font-family: -apple-system, sans-serif;
+  }
+  button.copy:active { transform: translateY(1px); }
+  button.copy.done { background: var(--ink); color: var(--bg); }
+
+  .recent { margin-top: 16px; }
+  .recent .label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { width: 26px; height: 26px; border-radius: 5px; border: 1px solid var(--line); cursor: pointer; }
+  .chip:hover { transform: scale(1.12); }
+
+  .tools { margin-top: 12px; display: flex; gap: 8px; }
+  .tools button {
+    flex: 1; padding: 8px; border-radius: 7px; cursor: pointer; font-size: 12px;
+    background: transparent; color: var(--muted); border: 1px solid var(--line);
+    font-family: -apple-system, sans-serif;
+  }
+  .tools button:hover { color: var(--ink); border-color: var(--muted); }
+  input[type=file] { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Eyedropper</h1>
+    <span class="hint">Paste with <kbd>⌘V</kbd>, drop an image, or click to browse. Then hover to inspect, click to lock a color.</span>
+  </header>
+
+  <div class="grid">
+    <div class="stage" id="stage">
+      <div class="empty" id="empty">
+        <strong>Drop an image here</strong><br>
+        or press <kbd>⌘V</kbd> to paste a screenshot<br>
+        <span style="font-size:12px">(click anywhere to browse files)</span>
+      </div>
+      <canvas id="canvas" style="display:none"></canvas>
+    </div>
+
+    <div class="panel">
+      <div class="swatch-big" id="swatch"></div>
+      <div class="readout">
+        <div class="row"><span class="k">Hex</span><span class="v" id="hex">—</span></div>
+        <div class="row"><span class="k">RGB</span><span class="v" id="rgb">—</span></div>
+        <div class="row"><span class="k">HSL</span><span class="v" id="hsl">—</span></div>
+      </div>
+      <button class="copy" id="copyBtn">Copy hex</button>
+      <div class="recent">
+        <div class="label">Recent</div>
+        <div class="chips" id="chips"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tools" style="max-width:940px;margin:12px auto 0">
+    <button id="browseBtn">Open file…</button>
+    <button id="clearBtn">Clear</button>
+  </div>
+</div>
+
+<canvas id="loupe" width="128" height="128"></canvas>
+<input type="file" id="file" accept="image/*">
+
+<script>
+const stage = document.getElementById('stage');
+const empty = document.getElementById('empty');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d', { willReadFrequently: true });
+const loupe = document.getElementById('loupe');
+const lctx = loupe.getContext('2d');
+const fileInput = document.getElementById('file');
+
+let img = null;          // natural-resolution offscreen copy
+let scale = 1;           // display px per image px
+let locked = null;       // last clicked color
+const recent = [];
+
+function hexOf(r,g,b){ return '#' + [r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('').toUpperCase(); }
+function hsl(r,g,b){
+  r/=255; g/=255; b/=255;
+  const mx=Math.max(r,g,b), mn=Math.min(r,g,b); let h,s,l=(mx+mn)/2;
+  if(mx===mn){ h=s=0; } else {
+    const d=mx-mn; s=l>0.5? d/(2-mx-mn) : d/(mx+mn);
+    switch(mx){ case r: h=(g-b)/d+(g<b?6:0); break; case g: h=(b-r)/d+2; break; default: h=(r-g)/d+4; }
+    h/=6;
+  }
+  return `${Math.round(h*360)}°, ${Math.round(s*100)}%, ${Math.round(l*100)}%`;
+}
+
+function loadImage(src){
+  const im = new Image();
+  im.onload = () => {
+    img = im;
+    canvas.width = im.naturalWidth;
+    canvas.height = im.naturalHeight;
+    ctx.drawImage(im, 0, 0);
+    canvas.style.display = 'block';
+    empty.style.display = 'none';
+    requestAnimationFrame(() => { scale = canvas.clientWidth / canvas.width; });
+  };
+  im.src = src;
+}
+
+function pixelAt(clientX, clientY){
+  const r = canvas.getBoundingClientRect();
+  const x = Math.floor((clientX - r.left) / r.width  * canvas.width);
+  const y = Math.floor((clientY - r.top)  / r.height * canvas.height);
+  if (x<0||y<0||x>=canvas.width||y>=canvas.height) return null;
+  const d = ctx.getImageData(x, y, 1, 1).data;
+  return { r:d[0], g:d[1], b:d[2], x, y };
+}
+
+function setReadout(p){
+  document.getElementById('swatch').style.background = hexOf(p.r,p.g,p.b);
+  document.getElementById('hex').textContent = hexOf(p.r,p.g,p.b);
+  document.getElementById('rgb').textContent = `${p.r}, ${p.g}, ${p.b}`;
+  document.getElementById('hsl').textContent = hsl(p.r,p.g,p.b);
+}
+
+function addRecent(hex){
+  if (recent[0] === hex) return;
+  recent.unshift(hex);
+  if (recent.length > 10) recent.pop();
+  const chips = document.getElementById('chips');
+  chips.innerHTML = '';
+  recent.forEach(h => {
+    const c = document.createElement('div');
+    c.className = 'chip'; c.style.background = h; c.title = h;
+    c.onclick = () => { navigator.clipboard.writeText(h); };
+    chips.appendChild(c);
+  });
+}
+
+// hover loupe
+canvas.addEventListener('mousemove', e => {
+  if (!img) return;
+  const p = pixelAt(e.clientX, e.clientY);
+  if (!p) { loupe.style.display='none'; return; }
+  setReadout(p);
+  // draw zoomed region
+  const zoom = 12, span = 128/zoom; // px of source shown
+  lctx.imageSmoothingEnabled = false;
+  lctx.clearRect(0,0,128,128);
+  lctx.drawImage(canvas, p.x-span/2, p.y-span/2, span, span, 0, 0, 128, 128);
+  // crosshair
+  lctx.strokeStyle = 'rgba(255,255,255,.9)'; lctx.lineWidth = 1;
+  lctx.strokeRect(64-zoom/2, 64-zoom/2, zoom, zoom);
+  loupe.style.display = 'block';
+  loupe.style.left = (e.clientX + 18) + 'px';
+  loupe.style.top  = (e.clientY - 140) + 'px';
+});
+canvas.addEventListener('mouseleave', () => {
+  loupe.style.display = 'none';
+  if (locked) setReadout(locked);
+});
+canvas.addEventListener('click', e => {
+  const p = pixelAt(e.clientX, e.clientY);
+  if (!p) return;
+  locked = p; setReadout(p); addRecent(hexOf(p.r,p.g,p.b));
+});
+
+// copy
+document.getElementById('copyBtn').addEventListener('click', () => {
+  const hex = document.getElementById('hex').textContent;
+  if (hex === '—') return;
+  navigator.clipboard.writeText(hex);
+  const b = document.getElementById('copyBtn');
+  b.textContent = 'Copied ' + hex; b.classList.add('done');
+  setTimeout(() => { b.textContent = 'Copy hex'; b.classList.remove('done'); }, 1200);
+});
+
+// paste
+window.addEventListener('paste', e => {
+  const items = e.clipboardData?.items || [];
+  for (const it of items) {
+    if (it.type.startsWith('image/')) {
+      const blob = it.getAsFile();
+      loadImage(URL.createObjectURL(blob));
+      e.preventDefault();
+      return;
+    }
+  }
+});
+
+// drag & drop
+['dragenter','dragover'].forEach(ev => stage.addEventListener(ev, e => { e.preventDefault(); stage.classList.add('drop'); }));
+['dragleave','drop'].forEach(ev => stage.addEventListener(ev, e => { e.preventDefault(); stage.classList.remove('drop'); }));
+stage.addEventListener('drop', e => {
+  const f = e.dataTransfer.files?.[0];
+  if (f && f.type.startsWith('image/')) loadImage(URL.createObjectURL(f));
+});
+
+// browse
+function browse(){ fileInput.click(); }
+empty.addEventListener('click', browse);
+document.getElementById('browseBtn').addEventListener('click', browse);
+fileInput.addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (f) loadImage(URL.createObjectURL(f));
+});
+document.getElementById('clearBtn').addEventListener('click', () => {
+  img = null; canvas.style.display='none'; empty.style.display='block';
+  document.getElementById('swatch').style.background = '#000';
+  ['hex','rgb','hsl'].forEach(id => document.getElementById(id).textContent = '—');
+});
+window.addEventListener('resize', () => { if (img) scale = canvas.clientWidth / canvas.width; });
+</script>
+</body>
+</html>
